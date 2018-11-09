@@ -28,7 +28,8 @@ export class CenterImage extends Component {
 
   componentWillReceiveProps(nextProps) {
     if (shouldLoad(this.props.index, nextProps.current)) {
-      this.loadImg();
+      // prevent hidden error items' retrying, only allow next entering item
+      this.loadImg(this.state.error && this.props.index !== nextProps.current);
     }
   }
 
@@ -50,14 +51,17 @@ export class CenterImage extends Component {
     return <img src={this.props.src} alt="" style={this.imageStyle} />;
   }
 
-  loadImg() {
+  // use 'prevent' to stop retry load image for hidden items
+  loadImg(prevent = false) {
+    if (prevent) {
+      return;
+    }
+
     if (this.loadSuccess) {
       return;
     }
 
-    this.setState({
-      hide: false
-    });
+    this.setState({ hide: false, error: false, loading: true });
 
     let img = new Image();
 
@@ -66,9 +70,7 @@ export class CenterImage extends Component {
       this.imageStyle = this.getImageStyle(e.target);
 
       // setTimeout(() => {
-        this.setState({
-          loading: false
-        });
+      this.setState({ loading: false });
       // }, 2000);
     };
     img.onerror = () => {
