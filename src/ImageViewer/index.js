@@ -11,32 +11,22 @@ const gap = 30;
 
 class ImageView extends Component {
   static defaultProps = {
-    current: 0,
-    desc: "", // eslint-disable-line
-    maxScale: 2
+    current: 0
   };
 
   constructor(props) {
     super(props);
 
     const { imagelist, current } = props;
-    this.count = imagelist.length;
     this.state = {
       current
     };
+
+    this.count = imagelist.length;
+    this.focus = false; // 是否正在放大某张图片
   }
 
-  initScale = 1;
-
-  screenWidth = window.innerWidth || window.screen.availWidth;
-
-  screenHeight = window.innerHeight || window.screen.availHeight;
-
-  list = null;
-
   ob = null;
-
-  focused = null;
 
   render() {
     const { imagelist } = this.props;
@@ -62,7 +52,7 @@ class ImageView extends Component {
                     <CenterImage
                       id={`view${i}`}
                       className="imagelist-item-img"
-                      lazysrc={item}
+                      src={item}
                       index={i}
                       current={current}
                       wrapperProps={{
@@ -104,12 +94,8 @@ class ImageView extends Component {
   }
 
   onPressMove(evt) {
-    const { current } = this.state;
-
-    console.log("press_move: ", evt);
-
+    // const { current } = this.state;
     // this.endAnimation();
-
     // if (!this.focused) {
     //   if (
     //     (current === 0 && evt.deltaX > 0) ||

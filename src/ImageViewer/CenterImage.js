@@ -1,70 +1,89 @@
-import React, { Component } from 'react';
+import React, { Component } from "react";
 
-const PRELOADNUM = 3;
+const PRELOAD_NUM = 1;
+
+function shouldLoad(index, current) {
+  return index <= current + PRELOAD_NUM && index >= current - PRELOAD_NUM;
+}
 
 export class CenterImage extends Component {
-  state = {
-    loading: true,
-    error: false,
-    loaded: false
-  };
+  constructor() {
+    super();
+
+    this.state = {
+      hide: true,
+      loading: true,
+      error: false
+    };
+
+    this.loadSuccess = false;
+  }
+
+  componentDidMount() {
+    const { index, current } = this.props;
+    if (shouldLoad(index, current)) {
+      this.loadImg();
+    }
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (shouldLoad(this.props.index, nextProps.current)) {
+      this.loadImg();
+    }
+  }
 
   render() {
-    const { loading, error } = this.state;
-    const { index, current, lazysrc } = this.props;
-    const img = <img onLoad={this.onImgLoad} src={lazysrc} alt="" />;
+    const { loading, error, hide } = this.state;
+
+    if (hide) {
+      return null;
+    }
 
     if (loading) {
       return <Loading />;
     }
-    
-    // init first image, others have been preloaded
-    if (index === current) {
-      return img;
-    }
-    
+
     if (error) {
       return <Error />;
     }
 
-    return img;
-  }
-
-  componentDidMount() {
-    this.loadImg();
-  }
-
-  componentWillReceiveProps() {
-    !this.state.loaded && this.loadImg();
+    return <img src={this.props.src} alt="" style={this.imageStyle} />;
   }
 
   loadImg() {
-    const { index, current, lazysrc } = this.props;
-
-    if (lazysrc && index <= current + PRELOADNUM && index >= current - PRELOADNUM) {
-      let img = new Image();
-
-      img.src = lazysrc;
-      img.onload = () => {
-        // this.setState({
-        //   loading: false
-        // });
-      };
-      img.onerror = () => {
-        this.setState({
-          loading: false,
-          error: true
-        });
-      };
+    if (this.loadSuccess) {
+      return;
     }
+
+    this.setState({
+      hide: false
+    });
+
+    let img = new Image();
+
+    img.onload = e => {
+      this.loadSuccess = true;
+      this.imageStyle = this.getImageStyle(e.target);
+
+      // setTimeout(() => {
+        this.setState({
+          loading: false
+        });
+      // }, 2000);
+    };
+    img.onerror = () => {
+      this.setState({
+        loading: false,
+        error: true
+      });
+    };
+    img.src = this.props.src;
   }
 
-  onImgLoad = e => {
-    this.setState({ loaded: true });
-
+  getImageStyle = img => {
     const { width, height } = this.props.wrapperProps;
 
-    const target = e.target; // dom img
+    const target = img; // dom img
     const h = target.naturalHeight;
     const w = target.naturalWidth;
 
@@ -76,11 +95,11 @@ export class CenterImage extends Component {
     if (wrapperRatio > 1) {
       // 竖屏
       imgStyle = {
-        width: width + 'px',
-        height: width * imgRatio + 'px'
+        width: width + "px",
+        height: width * imgRatio + "px"
       };
       if (h <= height) {
-        imgStyle.top = height / 2 - (width * imgRatio) / 2 + 'px';
+        imgStyle.top = height / 2 - (width * imgRatio) / 2 + "px";
       } else {
         imgStyle.top = 0;
       }
@@ -99,10 +118,12 @@ export class CenterImage extends Component {
       // eslint-disable-line
     }
 
-    const s = Object.keys(imgStyle)
-      .map(k => `${k}: ${imgStyle[k]}`)
-      .join('; ');
-    target.setAttribute('style', s);
+    // const s = Object.keys(imgStyle)
+    //   .map(k => `${k}: ${imgStyle[k]}`)
+    //   .join("; ");
+
+    return imgStyle;
+    // target.setAttribute("style", s);
 
     // target.setAttribute('rate', 1 / imgRatio);
     // if (imgRatio >= 3.5) {
