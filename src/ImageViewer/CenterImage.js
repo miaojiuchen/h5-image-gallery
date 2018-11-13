@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 
 const PRELOAD_NUM = 1;
-
 function shouldLoad(index, current) {
   return index <= current + PRELOAD_NUM && index >= current - PRELOAD_NUM;
 }
@@ -48,7 +47,16 @@ export class CenterImage extends Component {
       return <Error />;
     }
 
-    return <img src={this.props.src} alt="" style={this.imageStyle} />;
+    // imageStyle must be set before rendering
+    return (
+      <img
+        alt=""
+        ref={el => (this.image = el)}
+        id={this.props.id}
+        src={this.props.src}
+        style={this.imageStyle}
+      />
+    );
   }
 
   // use 'prevent' to stop retry load image for hidden items
@@ -69,9 +77,9 @@ export class CenterImage extends Component {
       this.loadSuccess = true;
       this.imageStyle = this.getImageStyle(e.target);
 
-      // setTimeout(() => {
-      this.setState({ loading: false });
-      // }, 2000);
+      this.setState({ loading: false }, () => {
+        this.props.onImageLoad(this.image);
+      });
     };
     img.onerror = () => {
       this.setState({

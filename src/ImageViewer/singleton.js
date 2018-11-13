@@ -1,5 +1,5 @@
-import React from 'react';
-import { render, unmountComponentAtNode } from 'react-dom';
+import React from "react";
+import { render, unmountComponentAtNode } from "react-dom";
 
 export default class Singleton {
   constructor(component) {
@@ -14,10 +14,11 @@ export default class Singleton {
 
   show(option) {
     if (!this.dom) {
-      this.dom = document.createElement('div');
+      this.dom = document.createElement("div");
       document.body.appendChild(this.dom);
     }
-    this.instance = render(<this.component {...option} />, this.dom);
+    this.instance = <this.component {...option} />;
+    render(this.instance, this.dom);
   }
 
   hide() {

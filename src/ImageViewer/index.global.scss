@@ -1,17 +1,16 @@
 .hide {
   opacity: 0;
   transition: opacity 0.2s;
-  -webkit-transition: opacity 0.2s;
 }
 
 .imageview {
   position: fixed;
   top: 50%;
-  margin-top: -160px;
+  margin-top: -240px;
   left: 50%;
-  margin-left: -90px;
-  width: 180px;
-  height: 320px;
+  margin-left: -110px;
+  width: 220px;
+  height: 480px;
   z-index: 1001;
   background-color: #000; // overflow: hidden;
   animation: easeshow 0.25s;
@@ -20,15 +19,15 @@
   .page {
     font-family: -apple-system-font, "Helvetica Neue", Helvetica, STHeiTi,
       sans-serif;
-    position: fixed;
+    position: absolute;
     font-size: 14px;
     color: #fff;
     padding: 2px 5px;
     bottom: 10px;
-    left: 50%; // -webkit-transform: translateX(-50%);
+    left: 50%;
     transform: translateX(-50%);
     -webkit-touch-callout: none;
-    -webkit-user-select: none;
+    user-select: none;
   }
 
   .spinner {
@@ -49,12 +48,11 @@
     opacity: 0.6;
     position: absolute;
     top: 0;
-    left: 0; // -webkit-animation: sk-bounce 2s infinite ease-in-out;
+    left: 0;
     animation: sk-bounce 2s infinite ease-in-out;
   }
 
   .double-bounce2 {
-    // -webkit-animation-delay: -1s;
     animation-delay: -1s;
   }
 
@@ -107,7 +105,7 @@
   height: 100%;
   list-style-type: none;
   -webkit-touch-callout: none;
-  -webkit-user-select: none;
+  user-select: none;
   .imagelist-item {
     display: -webkit-box;
     -webkit-box-pack: center;
@@ -125,7 +123,7 @@
       left: 0;
       max-width: 100%;
       -webkit-touch-callout: none;
-      -webkit-user-select: none;
+      user-select: none;
     }
   }
 }
@@ -133,10 +131,10 @@
 @-webkit-keyframes sk-bounce {
   0%,
   100% {
-    -webkit-transform: scale(0);
+    transform: scale(0);
   }
   50% {
-    -webkit-transform: scale(1);
+    transform: scale(1);
   }
 }
 
@@ -144,10 +142,8 @@
   0%,
   100% {
     transform: scale(0);
-    -webkit-transform: scale(0);
   }
   50% {
     transform: scale(1);
-    -webkit-transform: scale(1);
   }
 }
