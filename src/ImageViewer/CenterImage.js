@@ -26,6 +26,7 @@ export class CenterImage extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
+    console.log(nextProps);
     if (shouldLoad(this.props.index, nextProps.current)) {
       // prevent hidden error items' retrying, only allow next entering item
       this.loadImg(this.state.error && this.props.index !== nextProps.current);
@@ -47,6 +48,7 @@ export class CenterImage extends Component {
       return <Error />;
     }
 
+    console.log(this.imageStyle)
     // imageStyle must be set before rendering
     return (
       <img
@@ -76,7 +78,6 @@ export class CenterImage extends Component {
     img.onload = e => {
       this.loadSuccess = true;
       this.imageStyle = this.getImageStyle(e.target);
-
       this.setState({ loading: false }, () => {
         this.props.onImageLoad(this.image);
       });

@@ -28,6 +28,10 @@ class ImageView extends Component {
     return this.images[this.state.current];
   }
 
+  getNode = i => {
+    return this.images[i];
+  };
+
   // 是否正在放大某张图片
   focus = false;
   boundaryReach = false;
@@ -35,6 +39,7 @@ class ImageView extends Component {
   handleImageLoad = i => {
     return domNode => {
       this.images[i] = domNode;
+      this.bindStyle(i);
       console.log(this.images);
     };
   };
@@ -42,7 +47,7 @@ class ImageView extends Component {
   render() {
     const { imagelist } = this.props;
 
-    const { current } = this.state;
+    const { current, wrapperWidth, wrapperHeight } = this.state;
 
     return (
       <div className="imageview" ref="wrapper">
@@ -63,18 +68,20 @@ class ImageView extends Component {
                   className="imagelist-item"
                   style={{ marginRight: gap + "px" }}
                 >
-                  <CenterImage
-                    id={viewId(i)}
-                    className="imagelist-item-img"
-                    src={item}
-                    index={i}
-                    current={current}
-                    onImageLoad={this.handleImageLoad(i)}
-                    wrapperProps={{
-                      width: this.wrapperWidth,
-                      height: this.wrapperHeight
-                    }}
-                  />
+                  {wrapperWidth && wrapperHeight && (
+                    <CenterImage
+                      id={viewId(i)}
+                      className="imagelist-item-img"
+                      src={item}
+                      index={i}
+                      current={current}
+                      onImageLoad={this.handleImageLoad(i)}
+                      wrapperProps={{
+                        width: wrapperWidth,
+                        height: wrapperHeight
+                      }}
+                    />
+                  )}
                 </li>
               </AlloyFinger>
             );
@@ -101,9 +108,9 @@ class ImageView extends Component {
     const { originX, originY } = this.node;
 
     const originX2 =
-      e.center.x - this.wrapperWidth / 2 - this.wrapperScrollLeft;
+      e.center.x - this.state.wrapperWidth / 2 - this.wrapperScrollLeft;
     const originY2 =
-      e.center.y - this.wrapperHeight / 2 - this.wrapperScrollTop;
+      e.center.y - this.state.wrapperHeight / 2 - this.wrapperScrollTop;
 
     this.node.originX = originX2;
     this.node.originY = originY2;
@@ -114,8 +121,6 @@ class ImageView extends Component {
       this.node.translateY + (originY2 - originY) * this.node.scaleY;
 
     this.node.scaleX = e.scale;
-
-    console.log(originX, originY, e.center);
   };
 
   componentDidMount() {
@@ -124,14 +129,15 @@ class ImageView extends Component {
 
     this.count = imagelist.length;
 
-    this.wrapperWidth = this.refs.wrapper.offsetWidth;
-    this.wrapperHeight = this.refs.wrapper.offsetHeight;
+    this.setState(
+      {
+        wrapperWidth: this.refs.wrapper.offsetWidth,
+        wrapperHeight: this.refs.wrapper.offsetHeight
+      },
+      () => this.swipeTo(current, false)
+    );
 
     window.Transform(this.ul);
-
-    this.swipeTo(current, false);
-
-    // this.bindStyle(current);
   }
 
   get wrapperScrollLeft() {
@@ -183,18 +189,17 @@ class ImageView extends Component {
       default:
     }
 
-    this.setState({ current }, () => {
-      this.bindStyle(current);
-    });
+    this.setState({ current });
 
     this.swipeTo(current);
   };
 
-  bindStyle(current) {
-    // this.node &&
-    this.restore();
+  bindStyle(i) {
+    const node = this.getNode(i);
 
-    if (this.node && !this.node.scaleX) {
+    this.restore(node);
+
+    if (node && !node.scaleX) {
       window.Transform(this.node);
     }
     // // ease hide page number
@@ -211,17 +216,16 @@ class ImageView extends Component {
     if (ease) {
       this.ul.style.transition = "300ms ease";
     }
-    this.ul.translateX = -current * (this.wrapperWidth + gap);
+    this.ul.translateX = -current * (this.state.wrapperWidth + gap);
   }
 
-  restore(rotate = true) {
-    this.node.translateX = 0;
-    this.node.translateY = 0;
-    !!rotate && (this.node.rotateZ = 0);
-    this.node.scaleX = 1;
-    this.node.scaleY = 1;
-    this.node.originX = 0;
-    this.node.originY = 0;
+  restore(node) {
+    node.translateX = 0;
+    node.translateY = 0;
+    node.scaleX = 1;
+    node.scaleY = 1;
+    node.originX = 0;
+    node.originY = 0;
   }
 
   endAnimation() {
