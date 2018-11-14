@@ -7,7 +7,6 @@ import Singleton from "./singleton";
 import "./index.global.scss";
 
 const gap = 0;
-const viewId = id => `view${id}`;
 
 class ImageView extends Component {
   static defaultProps = {
@@ -34,93 +33,16 @@ class ImageView extends Component {
 
   // 是否正在放大某张图片
   focus = false;
-  boundaryReach = false;
+  canPinch = false;
+  // 每张图片初始缩放，这个值随着放大与缩小而产生变化
+  currentScale = 1;
+  maxScale = 3;
 
   handleImageLoad = i => {
     return domNode => {
       this.images[i] = domNode;
       this.bindStyle(i);
-      console.log(this.images);
     };
-  };
-
-  render() {
-    const { imagelist } = this.props;
-
-    const { current, wrapperWidth, wrapperHeight } = this.state;
-
-    return (
-      <div className="imageview" ref="wrapper">
-        <ul ref={el => (this.ul = el)} className="imagelist">
-          {imagelist.map((item, i) => {
-            return (
-              <AlloyFinger
-                key={i}
-                onSingleTap={this.onSingleTap}
-                onSwipe={this.onSwipe}
-                onPressMove={this.onPressMove}
-                onDoubleTap={this.handleDoubleTap}
-                onPinch={this.handlePinch}
-                onMultipointStart={this.onMultipointStart}
-                onMultipointEnd={this.onMultipointEnd}
-              >
-                <li
-                  className="imagelist-item"
-                  style={{ marginRight: gap + "px" }}
-                >
-                  {wrapperWidth && wrapperHeight && (
-                    <CenterImage
-                      id={viewId(i)}
-                      className="imagelist-item-img"
-                      src={item}
-                      index={i}
-                      current={current}
-                      onImageLoad={this.handleImageLoad(i)}
-                      wrapperProps={{
-                        width: wrapperWidth,
-                        height: wrapperHeight
-                      }}
-                    />
-                  )}
-                </li>
-              </AlloyFinger>
-            );
-          })}
-        </ul>
-        <div className="page" ref="page">
-          {current + 1} / {this.count}
-        </div>
-      </div>
-    );
-  }
-
-  handleDoubleTap = e => {
-    console.log("double tap");
-    this.focus = !this.focus;
-
-    console.log();
-  };
-
-  handlePinch = e => {
-    this.focus = true;
-
-    this.node.style.transition = "cubic-bezier(.25,.01,.25,1)";
-    const { originX, originY } = this.node;
-
-    const originX2 =
-      e.center.x - this.state.wrapperWidth / 2 - this.wrapperScrollLeft;
-    const originY2 =
-      e.center.y - this.state.wrapperHeight / 2 - this.wrapperScrollTop;
-
-    this.node.originX = originX2;
-    this.node.originY = originY2;
-
-    this.node.translateX =
-      this.node.translateX + (originX2 - originX) * this.node.scaleX;
-    this.node.translateY =
-      this.node.translateY + (originY2 - originY) * this.node.scaleY;
-
-    this.node.scaleX = e.scale;
   };
 
   componentDidMount() {
@@ -132,12 +54,16 @@ class ImageView extends Component {
     this.setState(
       {
         wrapperWidth: this.refs.wrapper.offsetWidth,
-        wrapperHeight: this.refs.wrapper.offsetHeight
+        wrapperHeight: this.refs.wrapper.offsetHeight,
+        wrapperReady: true
       },
-      () => this.swipeTo(current, false)
+      () => {
+        this.wrapperWidth = this.state.wrapperWidth;
+        this.wrapperHeight = this.state.wrapperHeight;
+        window.Transform(this.ul);
+        this.swipeTo(current, false);
+      }
     );
-
-    window.Transform(this.ul);
   }
 
   get wrapperScrollLeft() {
@@ -147,26 +73,162 @@ class ImageView extends Component {
     return this.refs.wrapper.scrollTop;
   }
 
-  onSingleTap = () => {
-    console.log("single tap");
-    // this.props.close && this.props.close();
+  render() {
+    const { imagelist } = this.props;
+
+    const { current, wrapperWidth, wrapperHeight, wrapperReady } = this.state;
+
+    return (
+      <div className="imageview" ref="wrapper">
+        {wrapperReady && (
+          <ul ref={el => (this.ul = el)} className="imagelist">
+            {imagelist.map((item, i) => {
+              return (
+                <AlloyFinger
+                  key={i}
+                  onSingleTap={this.onSingleTap}
+                  onSwipe={this.onSwipe}
+                  onPressMove={this.onPressMove}
+                  onDoubleTap={this.handleDoubleTap}
+                  onPinch={this.handlePinch}
+                  onMultipointStart={this.onMultipointStart}
+                  onMultipointEnd={this.onMultipointEnd}
+                >
+                  <li
+                    className="imagelist-item"
+                    style={{ marginRight: gap + "px" }}
+                  >
+                    <CenterImage
+                      className="imagelist-item-img"
+                      src={item}
+                      index={i}
+                      current={current}
+                      onImageLoad={this.handleImageLoad(i)}
+                      wrapperProps={{
+                        width: wrapperWidth,
+                        height: wrapperHeight
+                      }}
+                    />
+                  </li>
+                </AlloyFinger>
+              );
+            })}
+          </ul>
+        )}
+        <div className="page" ref="page">
+          {current + 1} / {this.count}
+        </div>
+      </div>
+    );
+  }
+
+  handleDoubleTap = e => {
+    this.focus = !this.focus;
+    const { origin } = e;
+    const originX = origin[0] - this.wrapperWidth / 2 - this.wrapperScrollLeft;
+    const originY = origin[1] - this.wrapperHeight / 2 - this.wrapperScrollTop;
+
+    if (this.focus) {
+      this.node.translateX = originX;
+      this.node.originX = originX;
+
+      this.node.translateY = originY;
+      this.node.originY = originY;
+      this.setScale(this.node, 2);
+    } else {
+      this.node.translateX = this.node.originX;
+      this.node.translateY = this.node.originY;
+      this.setScale(this.node, 1);
+    }
   };
 
-  // onMultipointStart = () => {
-  //   console.log("multipointStart");
-  // };
+  // pinch之前设置当前图片的缩放
+  onMultipointStart = e => {
+    this.currentScale = this.node.scaleX;
+  };
+
+  handlePinch = e => {
+    this.focus = true;
+
+    this.node.style.transition = "cubic-bezier(.25,.01,.25,1)";
+    const { originX, originY } = this.node;
+
+    const originX2 =
+      e.center.x - this.wrapperWidth / 2 - this.wrapperScrollLeft;
+    const originY2 =
+      e.center.y - this.wrapperHeight / 2 - this.wrapperScrollTop;
+
+    this.node.originX = originX2;
+    this.node.originY = originY2;
+
+    this.node.translateX =
+      this.node.translateX + (originX2 - originX) * this.node.scaleX;
+    this.node.translateY =
+      this.node.translateY + (originY2 - originY) * this.node.scaleY;
+
+    this.node.scaleX = this.currentScale * e.scale;
+    this.node.scaleY = this.currentScale * e.scale;
+  };
+
+  onMultipointEnd = e => {
+    if (this.node.scaleX < 1) {
+      this.restore(this.node);
+    }
+
+    if (this.node.scaleX > this.maxScale) {
+      this.setScale(this.node, this.maxScale);
+    }
+  };
+
+  onSingleTap = () => {
+    console.log("single tap");
+    this.props.close && this.props.close();
+  };
 
   onPressMove = e => {
     if (!this.focus) {
       return;
     }
+    console.log("onPressMove");
+    const { deltaX, deltaY } = e;
+    const { scaleX, width } = this.node;
 
-    console.log("pressMove");
+    if (scaleX <= 1 || e.touches.length > 1) {
+      return;
+    }
+
+    if (this.checkBoundary(deltaX, deltaY)) {
+      this.node.translateX += deltaX;
+      this.node.translateY += deltaY;
+    }
   };
 
-  // onMultipointEnd = () => {
-  //   console.log("multipointEnd");
-  // };
+  checkBoundary = (deltaX, deltaY) => {
+    const {
+      translateX,
+      translateY,
+      scaleX,
+      scaleY,
+      originX,
+      originY,
+      width,
+      height
+    } = this.node;
+
+    const rangeLeft = (scaleX - 1) * (width / 2 + originX) + originX;
+    const rangeRight = -(scaleX - 1) * (width / 2 - originX) + originX;
+    const rangeTop = (scaleY - 1) * (height / 2 + originY) + originY;
+    const rangeBottom = -(scaleY - 1) * (height / 2 - originY) + originY;
+
+    const nextX = translateX + deltaX;
+    const nextY = translateY + deltaY;
+    return (
+      nextX <= rangeLeft &&
+      nextX >= rangeRight &&
+      nextY <= rangeTop &&
+      nextY >= rangeBottom
+    );
+  };
 
   onSwipe = e => {
     if (this.focus) {
@@ -194,22 +256,11 @@ class ImageView extends Component {
     this.swipeTo(current);
   };
 
+  // init bind image style, add transform support
   bindStyle(i) {
     const node = this.getNode(i);
-
     this.restore(node);
-
-    if (node && !node.scaleX) {
-      window.Transform(this.node);
-    }
-    // // ease hide page number
-    // const page = this.refs.page;
-    // if (page) {
-    //   page.classList.remove("hide");
-    //   setTimeout(() => {
-    //     page.classList.add("hide");
-    //   }, 2000);
-    // }
+    window.Transform(node);
   }
 
   swipeTo(current, ease = true) {
@@ -217,7 +268,21 @@ class ImageView extends Component {
       this.ul.style.transition = "300ms ease";
     }
     this.ul.translateX = -current * (this.state.wrapperWidth + gap);
+
+    // ease hide page number
+    clearTimeout(this.pageHideTimeout);
+    const { page } = this.refs;
+    page.classList.remove("hide");
+    this.pageHideTimeout = setTimeout(() => {
+      page.classList.add("hide");
+    }, 2000);
   }
+
+  setScale = (node, size) => {
+    node.style.transition = "300ms ease-in-out";
+    node.scaleX = size;
+    node.scaleY = size;
+  };
 
   restore(node) {
     node.translateX = 0;
